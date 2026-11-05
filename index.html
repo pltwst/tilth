@@ -65,7 +65,7 @@
     <h2>How to play</h2>
     <ol class="rules">
       <li><b>Plant.</b> Put the plant at the front of the queue on any empty tile.</li>
-      <li><b>Harvest.</b> Every fourth item is the sickle. Tap a plant to harvest it and every matching plant that touches it on the same soil.</li>
+      <li><b>Harvest.</b> After a few plants, the sickle comes. Tap a plant to harvest it and every matching plant that touches it on the same soil.</li>
       <li><b>Turn the soil.</b> Harvested tiles change to the next soil. The edge at the bottom of each field shows that next soil.</li>
       <li><b>Score big.</b> Each plant in a group is worth more than the last: 1, 2, 3, 4… times its value. Bees add +1 to every plant in their group.</li>
       <li><b>Be patient.</b> Sunflowers, birches and redwoods need a few harvests to grow. Puffballs rot away after three.</li>
@@ -85,15 +85,18 @@
   <dialog id="over" class="sheet">
     <h2>Garden full</h2>
     <p class="final"><output id="final-score">0</output><span class="muted" id="final-best"></span></p>
-    <form method="dialog"><button class="btn primary" value="new">Plant a new garden</button></form>
+    <form method="dialog" class="stack">
+      <button class="btn primary" value="new">Plant a new garden</button>
+      <button class="btn" value="pick">Change difficulty</button>
+    </form>
   </dialog>
 
   <dialog id="confirm" class="sheet small">
-    <h2>Start a new garden?</h2>
-    <p class="muted">You lose the current garden.</p>
-    <form method="dialog" class="row">
-      <button class="btn" value="cancel">Keep playing</button>
-      <button class="btn primary" value="new">New garden</button>
+    <h2>New garden</h2>
+    <p class="muted" id="new-warning">You lose the current garden.</p>
+    <form method="dialog" class="stack">
+      <div id="modes" class="stack"></div>
+      <button class="btn" value="cancel">Cancel</button>
     </form>
   </dialog>
 </body>

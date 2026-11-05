@@ -1,4 +1,4 @@
-import { newGame, play, undo, groupAt, scoreGroup, goal, ripe, KINDS, HARVEST } from './game.js';
+import { newGame, play, undo, groupAt, scoreGroup, goal, ripe, untilHarvest, KINDS, MODES, HARVEST } from './game.js';
 import { plantArt, sickleArt, beeArt } from './art.js';
 import { sfx, setSound } from './sound.js';
 
@@ -12,7 +12,10 @@ const SOIL = ['clay', 'ochre', 'lilac'];
 
 let state = store.get(KEY);
 if (!state || state.over || !Array.isArray(state.plants)) state = newGame();
-let best = store.get(BEST) || 0;
+const modeOf = (s) => (MODES[s.mode] ? s.mode : 'normal');
+// Each mode keeps its own best. Normal keeps the old key, so earlier scores stay.
+const bestKey = (m) => (m === 'normal' ? BEST : `${BEST}.${m}`);
+let best = store.get(bestKey(modeOf(state))) || 0;
 let bestBefore = best; // a reload mid-game can hide a "new best"; fine for v1
 const drawn = []; // last plant markup per tile, so unchanged tiles keep their animation state
 
@@ -92,7 +95,7 @@ function render() {
   $('score').value = state.score;
   $('best').value = best;
   const lo = goal(state.season - 1), hi = goal(state.season);
-  $('season-label').textContent = `Season ${state.season}`;
+  $('season-label').textContent = `Season ${state.season} · ${MODES[modeOf(state)].name}`;
   $('season-bar').style.width = `${Math.min(100, ((state.score - lo) / (hi - lo)) * 100)}%`;
   $('season-goal').textContent = `${state.score} / ${hi}`;
   $('undo').disabled = !state.prev || state.over;
@@ -104,7 +107,7 @@ function hint(extra) {
   if (t.kind === HARVEST) {
     $('hint').innerHTML = extra ?? 'Harvest a group<small>Tap a ripe plant</small>';
   } else {
-    const left = state.queue.findIndex((q) => q.kind === HARVEST);
+    const left = untilHarvest(state);
     $('hint').innerHTML = `Plant the ${KINDS[t.kind].name.toLowerCase()}<small>${left === 1 ? 'Harvest next' : `Harvest in ${left}`}</small>`;
   }
 }
@@ -175,7 +178,7 @@ function tap(i) {
   state = r.state;
   if (state.score > best) best = state.score;
   store.set(KEY, state);
-  store.set(BEST, best);
+  store.set(bestKey(modeOf(state)), best);
   render();
 
   if (event.type === 'plant') {
@@ -198,9 +201,9 @@ function showOver() {
   sfx('over');
 }
 
-function startNew() {
-  bestBefore = best;
-  state = newGame();
+function startNew(mode = modeOf(state)) {
+  best = bestBefore = store.get(bestKey(mode)) || 0;
+  state = newGame(Date.now(), mode);
   drawn.length = 0;
   store.set(KEY, state);
   render();
@@ -210,9 +213,17 @@ $('undo').addEventListener('click', () => {
   const s = undo(state);
   if (s) { state = s; store.set(KEY, state); render(); sfx('undo'); }
 });
-$('new-btn').addEventListener('click', () => (state.over ? startNew() : $('confirm').showModal()));
-$('confirm').addEventListener('close', () => $('confirm').returnValue === 'new' && startNew());
-$('over').addEventListener('close', startNew);
+function pickMode() {
+  $('new-warning').hidden = state.over;
+  $('modes').innerHTML = Object.entries(MODES)
+    .map(([key, m]) => `<button class="mode${key === modeOf(state) ? ' current' : ''}" value="${key}"><b>${m.name}</b><span>${m.plants} plants per harvest${m.bees > 1 ? ', more bees' : m.bees < 1 ? ', fewer bees' : ''}</span></button>`)
+    .join('');
+  $('confirm').returnValue = '';
+  $('confirm').showModal();
+}
+$('new-btn').addEventListener('click', pickMode);
+$('confirm').addEventListener('close', () => MODES[$('confirm').returnValue] && startNew($('confirm').returnValue));
+$('over').addEventListener('close', () => ($('over').returnValue === 'pick' ? pickMode() : startNew()));
 $('help-btn').addEventListener('click', () => $('help').showModal());
 
 // Settings. Theme follows the system until the player picks one; then the choice is saved.

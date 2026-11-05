@@ -14,6 +14,14 @@ export const KINDS = {
 };
 const BASICS = ['clover', 'poppy', 'bluebell'];
 
+export const MODES = {
+  easy: { name: 'Easy', plants: 2, start: 4, bees: 1.5 },
+  normal: { name: 'Normal', plants: 3, start: 6, bees: 1 },
+  hard: { name: 'Hard', plants: 4, start: 6, bees: 0.5 },
+};
+// Games saved before modes existed have no mode: they are normal games.
+const mode = (s) => MODES[s.mode] ?? MODES.normal;
+
 export function goal(season) {
   return season <= 0 ? 0 : Math.floor(-64 + 50 * season + 20 * 1.185 ** season);
 }
@@ -48,11 +56,18 @@ function rollKind(s) {
   return w[w.length - 1][0];
 }
 
-function nextToken(s) {
+export function nextToken(s) {
   s.generated += 1;
-  if (s.generated % 4 === 0) return { kind: HARVEST };
+  if (s.generated % (mode(s).plants + 1) === 0) return { kind: HARVEST };
   const kind = rollKind(s);
-  return { kind, bee: rand(s) < KINDS[kind].bee };
+  return { kind, bee: rand(s) < KINDS[kind].bee * mode(s).bees };
+}
+
+// Plants to place before the next sickle (0 = harvest now). The queue only shows 4 items,
+// so on hard the sickle can be out of view.
+export function untilHarvest(s) {
+  const period = mode(s).plants + 1, front = s.generated - s.queue.length + 1;
+  return (period - (front % period)) % period;
 }
 
 export function neighbors(i) {
@@ -82,8 +97,9 @@ export function groupAt(s, i) {
   return [...seen];
 }
 
-export function newGame(seed = Date.now()) {
+export function newGame(seed = Date.now(), modeName = 'normal') {
   const s = {
+    mode: modeName,
     rng: (Math.abs(Math.floor(seed)) % 2147483646) + 1,
     soil: [], plants: Array(SIZE * SIZE).fill(null), queue: [],
     score: 0, season: 1, generated: 0, over: false, prev: null,
@@ -100,11 +116,11 @@ export function newGame(seed = Date.now()) {
       i = n[Math.floor(rand(s) * n.length)];
     }
   }
-  for (let placed = 0; placed < 6;) {
+  for (let placed = 0; placed < mode(s).start;) {
     const i = Math.floor(rand(s) * 16);
     if (s.plants[i]) continue;
     const kind = rollKind(s);
-    s.plants[i] = { kind, age: 0, bee: rand(s) < KINDS[kind].bee };
+    s.plants[i] = { kind, age: 0, bee: rand(s) < KINDS[kind].bee * mode(s).bees };
     placed++;
   }
   while (s.queue.length < 4) s.queue.push(nextToken(s));

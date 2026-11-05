@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newGame, play, undo, groupAt, scoreGroup, goal, HARVEST } from './game.js';
+import { newGame, play, undo, groupAt, scoreGroup, goal, nextToken, untilHarvest, HARVEST } from './game.js';
 
 const plant = (kind, extra = {}) => ({ kind, age: 0, bee: false, ...extra });
 
@@ -132,4 +132,54 @@ test('undo restores the previous state, including the random roll', () => {
   assert.deepEqual({ ...back, prev: null }, { ...s0, prev: null });
   assert.equal(undo(back), null, 'only one level of undo');
   assert.deepEqual(play(back, empty).state.queue, s1.queue, 'same roll after undo');
+});
+
+test('modes: harvest cadence and start plants', () => {
+  const cadence = (s) => {
+    const kinds = [];
+    for (let k = 0; k < 10; k++) {
+      kinds.push(s.queue[0].kind === HARVEST ? 'H' : 'P');
+      s.queue.shift();
+      s.queue.push(nextToken(s));
+    }
+    return kinds.join('');
+  };
+  assert.equal(cadence(newGame(1, 'easy')), 'PPHPPHPPHP');
+  assert.equal(cadence(newGame(1)), 'PPPHPPPHPP');
+  assert.equal(cadence(newGame(1, 'hard')), 'PPPPHPPPPH');
+  assert.equal(newGame(1, 'easy').plants.filter(Boolean).length, 4);
+  assert.equal(newGame(1, 'hard').plants.filter(Boolean).length, 6);
+  assert.equal(newGame(1).mode, 'normal');
+});
+
+test('modes: bees are more common on easy and rarer on hard', () => {
+  const bees = (mode) => {
+    const s = newGame(9, mode);
+    let n = 0;
+    for (let k = 0; k < 3000; k++) n += nextToken(s).bee ? 1 : 0;
+    return n;
+  };
+  const [easy, normal, hard] = ['easy', 'normal', 'hard'].map(bees);
+  assert.ok(easy > normal && normal > hard, `${easy} > ${normal} > ${hard}`);
+});
+
+test('a saved game without a mode still plays as normal', () => {
+  const s = newGame(4);
+  delete s.mode;
+  const r = play(s, s.plants.indexOf(null));
+  assert.ok(r);
+  assert.deepEqual(r.state.queue.map((t) => t.kind === HARVEST), [false, false, true, false]);
+});
+
+test('untilHarvest counts plants to the next sickle, also when it is not in the queue yet', () => {
+  for (const [mode, expected] of [['easy', [2, 1, 0, 2]], ['normal', [3, 2, 1, 0]], ['hard', [4, 3, 2, 1, 0, 4]]]) {
+    let s = newGame(2, mode);
+    const seen = [];
+    for (const _ of expected) {
+      seen.push(untilHarvest(s));
+      const i = s.queue[0].kind === HARVEST ? s.plants.findIndex((p, n) => groupAt(s, n).length) : s.plants.indexOf(null);
+      s = play(s, i).state;
+    }
+    assert.deepEqual(seen, expected, mode);
+  }
 });

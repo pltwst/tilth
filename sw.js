@@ -1,5 +1,5 @@
 // Bump VERSION on every release so phones drop the old cache.
-const VERSION = 'tilth-v5';
+const VERSION = 'tilth-v6';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'game.js', 'art.js', 'sound.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
