@@ -8,7 +8,7 @@ const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode: play without saving */ } },
 };
-const KEY = 'tilth.v1.game', BEST = 'tilth.v1.best', SEEN = 'tilth.v1.help', SOUND = 'tilth.sound';
+const KEY = 'tilth.v1.game', BEST = 'tilth.v1.best', SEEN = 'tilth.v1.help', SOUND = 'tilth.sound', PREF = 'tilth.mode';
 const SOIL = ['clay', 'ochre', 'lilac'];
 
 let state = store.get(KEY);
@@ -17,6 +17,8 @@ const modeOf = (s) => (MODES[s.mode] ? s.mode : 'normal');
 // Each mode keeps its own best. Normal keeps the old key, so earlier scores stay.
 const bestKey = (m) => (m === 'normal' ? BEST : `${BEST}.${m}`);
 let best = store.get(bestKey(modeOf(state))) || 0;
+// The mode for the next new garden: set in settings or in the New garden sheet.
+let preferred = MODES[store.get(PREF)] ? store.get(PREF) : modeOf(state);
 let bestBefore = best; // a reload mid-game can hide a "new best"; fine for v1
 const drawn = []; // last plant markup per tile, so unchanged tiles keep their animation state
 
@@ -202,12 +204,20 @@ function showOver() {
   sfx('over');
 }
 
-function startNew(mode = modeOf(state)) {
+function setPreferred(mode) {
+  preferred = mode;
+  store.set(PREF, mode);
+  renderDifficulty();
+}
+
+function startNew(mode = preferred) {
+  setPreferred(mode);
   best = bestBefore = store.get(bestKey(mode)) || 0;
   state = newGame(Date.now(), mode);
   drawn.length = 0;
   store.set(KEY, state);
   render();
+  renderDifficulty();
 }
 
 $('undo').addEventListener('click', () => {
@@ -217,7 +227,7 @@ $('undo').addEventListener('click', () => {
 function pickMode() {
   $('new-warning').hidden = state.over;
   $('modes').innerHTML = Object.entries(MODES)
-    .map(([key, m]) => `<button class="mode${key === modeOf(state) ? ' current' : ''}" value="${key}"><b>${m.name}</b><span>${m.plants} plants per harvest${m.bees > 1 ? ', more bees' : m.bees < 1 ? ', fewer bees' : ''}</span></button>`)
+    .map(([key, m]) => `<button class="mode${key === preferred ? ' current' : ''}" value="${key}"><b>${m.name}</b><span>${m.plants} plants per harvest${m.bees > 1 ? ', more bees' : m.bees < 1 ? ', fewer bees' : ''}</span></button>`)
     .join('');
   $('confirm').returnValue = '';
   $('confirm').showModal();
@@ -225,7 +235,24 @@ function pickMode() {
 $('new-btn').addEventListener('click', pickMode);
 $('confirm').addEventListener('close', () => MODES[$('confirm').returnValue] && startNew($('confirm').returnValue));
 $('over').addEventListener('close', () => ($('over').returnValue === 'pick' ? pickMode() : startNew()));
-$('help-btn').addEventListener('click', () => $('help').showModal());
+
+// Difficulty in settings. A fresh garden switches at once; a garden in progress keeps
+// its mode, and the note offers to start the new mode now.
+$('difficulty').innerHTML = '<legend>Difficulty</legend>' + Object.entries(MODES)
+  .map(([key, m]) => `<label><input type="radio" name="mode" value="${key}"><span>${m.name}</span></label>`)
+  .join('');
+function renderDifficulty() {
+  $('difficulty').querySelector(`input[value="${preferred}"]`).checked = true;
+  const pending = preferred !== modeOf(state) && !state.over;
+  $('mode-note').hidden = !pending;
+  if (pending) $('mode-note-text').textContent = `Your next garden will be ${MODES[preferred].name}. Start it now? You lose the current garden.`;
+}
+$('difficulty').addEventListener('change', (e) => {
+  setPreferred(e.target.value);
+  if (!state.prev && state.score === 0) startNew(); // nothing to lose yet
+});
+$('mode-now').addEventListener('click', () => { $('settings').close(); startNew(); });
+renderDifficulty();
 
 // Settings. Theme follows the system until the player picks one; then the choice is saved.
 // The theme is stored as a raw string because the inline script in index.html reads it.
@@ -263,7 +290,8 @@ $('sound-toggle').addEventListener('click', () => {
   sfx('place'); // a sample, so the player hears that sound is on
 });
 $('settings-btn').innerHTML = icon('gear');
-$('settings-btn').addEventListener('click', () => $('settings').showModal());
+$('settings-btn').addEventListener('click', () => { $('settings').returnValue = ''; $('settings').showModal(); });
+$('settings').addEventListener('close', () => $('settings').returnValue === 'help' && $('help').showModal());
 
 $('legend').innerHTML = Object.entries(KINDS)
   .map(([kind, k]) => `<tr><td>${plantArt({ kind, age: 0 }, true)}</td><td>${k.name}</td><td>${k.value} pt${k.value > 1 ? 's' : ''}${k.grow ? ` · grows in ${k.grow}` : ''}${k.decay ? ` · rots after ${k.decay}` : ''}</td></tr>`)

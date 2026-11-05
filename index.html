@@ -56,7 +56,6 @@
 
     <nav class="controls">
       <button id="undo" class="btn">Undo</button>
-      <button id="help-btn" class="btn">How to play</button>
       <button id="new-btn" class="btn">New garden</button>
     </nav>
   </main>
@@ -77,11 +76,19 @@
 
   <dialog id="settings" class="sheet small">
     <h2>Settings</h2>
+    <fieldset id="difficulty" class="segmented"></fieldset>
+    <p id="mode-note" class="mode-note" hidden>
+      <span id="mode-note-text"></span>
+      <button type="button" id="mode-now" class="btn">Start now</button>
+    </p>
     <div class="toggles">
       <button id="theme-toggle" class="toggle" aria-pressed="false"></button>
       <button id="sound-toggle" class="toggle" aria-pressed="true"></button>
     </div>
-    <form method="dialog"><button class="btn primary">Done</button></form>
+    <form method="dialog" class="stack">
+      <button class="btn" value="help">How to play</button>
+      <button class="btn primary" value="done">Done</button>
+    </form>
   </dialog>
 
   <dialog id="over" class="sheet">
