@@ -61,7 +61,7 @@
   </main>
 
   <dialog id="help" class="sheet">
-    <h2>How to play</h2>
+    <h2 tabindex="-1" autofocus>How to play</h2>
     <ol class="rules">
       <li><b>Plant.</b> Put the plant at the front of the queue on any empty tile.</li>
       <li><b>Harvest.</b> After a few plants, the sickle comes. Tap a plant to harvest it and every matching plant that touches it on the same soil.</li>
@@ -75,7 +75,7 @@
   </dialog>
 
   <dialog id="settings" class="sheet small">
-    <h2>Settings</h2>
+    <h2 tabindex="-1" autofocus>Settings</h2>
     <fieldset id="difficulty" class="segmented"></fieldset>
     <p id="mode-note" class="mode-note" hidden>
       <span id="mode-note-text"></span>
@@ -101,7 +101,7 @@
   </dialog>
 
   <dialog id="over" class="sheet">
-    <h2>Garden full</h2>
+    <h2 tabindex="-1" autofocus>Garden full</h2>
     <p class="final"><output id="final-score">0</output><span class="muted" id="final-best"></span></p>
     <p class="final-new" id="final-new" hidden></p>
     <form method="dialog" class="stack">
@@ -111,7 +111,7 @@
   </dialog>
 
   <dialog id="confirm" class="sheet small">
-    <h2>New garden</h2>
+    <h2 tabindex="-1" autofocus>New garden</h2>
     <p class="muted" id="new-warning">You lose the current garden.</p>
     <form method="dialog" class="stack">
       <div id="modes" class="stack"></div>

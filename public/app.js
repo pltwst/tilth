@@ -340,7 +340,7 @@ $('settings-btn').addEventListener('click', () => {
 async function showVersion() {
   const keys = await caches?.keys().catch(() => []) ?? [];
   const v = Math.max(0, ...keys.map((k) => +(k.match(/^tilth-v(\d+)$/)?.[1] ?? 0)));
-  $('version').textContent = v ? `Version ${v}` : '';
+  $('version').textContent = `Version ${v || '?'}`;
 }
 $('settings').addEventListener('close', () => {
   if ($('settings').returnValue === 'help') $('help').showModal();
