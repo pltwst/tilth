@@ -1,6 +1,6 @@
 // Bump VERSION on every release so phones drop the old cache.
-const VERSION = 'tilth-v6';
-const FILES = ['./', 'index.html', 'style.css', 'app.js', 'game.js', 'art.js', 'sound.js', 'manifest.webmanifest',
+const VERSION = 'tilth-v7';
+const FILES = ['./', 'index.html', 'style.css', 'app.js', 'game.js', 'art.js', 'sound.js', 'icons.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())));

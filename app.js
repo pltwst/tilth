@@ -1,6 +1,7 @@
 import { newGame, play, undo, groupAt, scoreGroup, goal, ripe, untilHarvest, KINDS, MODES, HARVEST } from './game.js';
 import { plantArt, sickleArt, beeArt } from './art.js';
 import { sfx, setSound } from './sound.js';
+import { icon } from './icons.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -232,11 +233,13 @@ const systemDark = matchMedia('(prefers-color-scheme: dark)');
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   document.querySelector('meta[name=theme-color]').content = theme === 'dark' ? '#1e1916' : '#f8f3ea';
-  $('dark-toggle').checked = theme === 'dark';
+  const dark = theme === 'dark';
+  $('theme-toggle').setAttribute('aria-pressed', dark);
+  $('theme-toggle').innerHTML = `${icon(dark ? 'moon' : 'sun')}<span>${dark ? 'Dark' : 'Light'} theme</span>`;
 }
 applyTheme(document.documentElement.dataset.theme);
-$('dark-toggle').addEventListener('change', (e) => {
-  const theme = e.target.checked ? 'dark' : 'light';
+$('theme-toggle').addEventListener('click', () => {
+  const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   try { localStorage.setItem('tilth.theme', theme); } catch { /* not saved; still switches */ }
   applyTheme(theme);
 });
@@ -246,14 +249,20 @@ systemDark.addEventListener('change', (e) => {
   if (!saved) applyTheme(e.matches ? 'dark' : 'light');
 });
 
-const soundOn = store.get(SOUND) ?? true;
-setSound(soundOn);
-$('sound-toggle').checked = soundOn;
-$('sound-toggle').addEventListener('change', (e) => {
-  setSound(e.target.checked);
-  store.set(SOUND, e.target.checked);
+let soundOn = store.get(SOUND) ?? true;
+function applySound() {
+  setSound(soundOn);
+  $('sound-toggle').setAttribute('aria-pressed', soundOn);
+  $('sound-toggle').innerHTML = `${icon(soundOn ? 'soundOn' : 'soundOff')}<span>Sound ${soundOn ? 'on' : 'off'}</span>`;
+}
+applySound();
+$('sound-toggle').addEventListener('click', () => {
+  soundOn = !soundOn;
+  store.set(SOUND, soundOn);
+  applySound();
   sfx('place'); // a sample, so the player hears that sound is on
 });
+$('settings-btn').innerHTML = icon('gear');
 $('settings-btn').addEventListener('click', () => $('settings').showModal());
 
 $('legend').innerHTML = Object.entries(KINDS)
