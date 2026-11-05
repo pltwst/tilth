@@ -1,12 +1,13 @@
 import { newGame, play, undo, groupAt, scoreGroup, goal, ripe, KINDS, HARVEST } from './game.js';
 import { plantArt, sickleArt, beeArt } from './art.js';
+import { sfx, setSound } from './sound.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode: play without saving */ } },
 };
-const KEY = 'tilth.v1.game', BEST = 'tilth.v1.best', SEEN = 'tilth.v1.help';
+const KEY = 'tilth.v1.game', BEST = 'tilth.v1.best', SEEN = 'tilth.v1.help', SOUND = 'tilth.sound';
 const SOIL = ['clay', 'ochre', 'lilac'];
 
 let state = store.get(KEY);
@@ -159,7 +160,7 @@ function restart(t, cls) {
 function tap(i) {
   const r = play(state, i);
   if (!r) {
-    if (!state.over) restart(tiles[i], 'shake');
+    if (!state.over) { restart(tiles[i], 'shake'); sfx('invalid'); }
     return;
   }
   const { event } = r;
@@ -168,6 +169,8 @@ function tap(i) {
     event.harvested.forEach((n) => ghost(n));
     event.decayed.forEach((n) => ghost(n, 'rot'));
     popup(i, `+${event.points}`);
+    sfx('harvest', event.harvested.length);
+    if (event.decayed.length) setTimeout(() => sfx('rot'), 200);
   }
   state = r.state;
   if (state.score > best) best = state.score;
@@ -177,10 +180,12 @@ function tap(i) {
 
   if (event.type === 'plant') {
     restart(tiles[i].querySelector('.plant'), 'pop');
+    sfx('place');
     navigator.vibrate?.(8);
   } else {
     event.matured.forEach((n) => restart(tiles[n].querySelector('.plant'), 'grow'));
-    if (event.seasonUp) setTimeout(() => toast(`Season ${state.season}`), 350);
+    if (event.matured.length) setTimeout(() => sfx('grow'), 300);
+    if (event.seasonUp) setTimeout(() => { toast(`Season ${state.season}`); sfx('season'); }, 350);
   }
   document.querySelector('.queue li:last-child')?.classList.add('enter');
   if (state.over) setTimeout(showOver, 900);
@@ -190,6 +195,7 @@ function showOver() {
   $('final-score').value = state.score;
   $('final-best').textContent = state.score > bestBefore ? 'New best!' : `Best ${best}`;
   $('over').showModal();
+  sfx('over');
 }
 
 function startNew() {
@@ -202,27 +208,24 @@ function startNew() {
 
 $('undo').addEventListener('click', () => {
   const s = undo(state);
-  if (s) { state = s; store.set(KEY, state); render(); }
+  if (s) { state = s; store.set(KEY, state); render(); sfx('undo'); }
 });
 $('new-btn').addEventListener('click', () => (state.over ? startNew() : $('confirm').showModal()));
 $('confirm').addEventListener('close', () => $('confirm').returnValue === 'new' && startNew());
 $('over').addEventListener('close', startNew);
 $('help-btn').addEventListener('click', () => $('help').showModal());
 
-// Theme: follows the system until the player taps the toggle; then the choice is saved.
-const SUN = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+// Settings. Theme follows the system until the player picks one; then the choice is saved.
+// The theme is stored as a raw string because the inline script in index.html reads it.
 const systemDark = matchMedia('(prefers-color-scheme: dark)');
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   document.querySelector('meta[name=theme-color]').content = theme === 'dark' ? '#1e1916' : '#f8f3ea';
-  const next = theme === 'dark' ? 'light' : 'dark';
-  $('theme-btn').innerHTML = theme === 'dark' ? SUN : MOON;
-  $('theme-btn').setAttribute('aria-label', `Switch to ${next} theme`);
+  $('dark-toggle').checked = theme === 'dark';
 }
 applyTheme(document.documentElement.dataset.theme);
-$('theme-btn').addEventListener('click', () => {
-  const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+$('dark-toggle').addEventListener('change', (e) => {
+  const theme = e.target.checked ? 'dark' : 'light';
   try { localStorage.setItem('tilth.theme', theme); } catch { /* not saved; still switches */ }
   applyTheme(theme);
 });
@@ -231,6 +234,16 @@ systemDark.addEventListener('change', (e) => {
   try { saved = localStorage.getItem('tilth.theme'); } catch { /* ignore */ }
   if (!saved) applyTheme(e.matches ? 'dark' : 'light');
 });
+
+const soundOn = store.get(SOUND) ?? true;
+setSound(soundOn);
+$('sound-toggle').checked = soundOn;
+$('sound-toggle').addEventListener('change', (e) => {
+  setSound(e.target.checked);
+  store.set(SOUND, e.target.checked);
+  sfx('place'); // a sample, so the player hears that sound is on
+});
+$('settings-btn').addEventListener('click', () => $('settings').showModal());
 
 $('legend').innerHTML = Object.entries(KINDS)
   .map(([kind, k]) => `<tr><td>${plantArt({ kind, age: 0 }, true)}</td><td>${k.name}</td><td>${k.value} pt${k.value > 1 ? 's' : ''}${k.grow ? ` · grows in ${k.grow}` : ''}${k.decay ? ` · rots after ${k.decay}` : ''}</td></tr>`)

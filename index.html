@@ -33,7 +33,7 @@
       <div class="scores">
         <div class="score"><span class="label">Score</span><output id="score">0</output></div>
         <div class="score best"><span class="label">Best</span><output id="best">0</output></div>
-        <button id="theme-btn" class="icon-btn" aria-label="Switch theme"></button>
+        <button id="settings-btn" class="icon-btn" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.7a7 7 0 0 1 0 2l2 1.7-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6a7 7 0 0 1-1.7-.9l-2.5.9-1.7-2.9 2-1.7a7 7 0 0 1 0-2l-2-1.7 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9L10.3 2ZM12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z"/></svg></button>
       </div>
     </header>
 
@@ -73,6 +73,13 @@
     </ol>
     <table class="legend" id="legend"></table>
     <form method="dialog"><button class="btn primary">Let’s grow</button></form>
+  </dialog>
+
+  <dialog id="settings" class="sheet small">
+    <h2>Settings</h2>
+    <label class="switch-row"><span>Dark theme</span><input type="checkbox" role="switch" id="dark-toggle"></label>
+    <label class="switch-row"><span>Sound effects</span><input type="checkbox" role="switch" id="sound-toggle"></label>
+    <form method="dialog"><button class="btn primary">Done</button></form>
   </dialog>
 
   <dialog id="over" class="sheet">
