@@ -1,5 +1,5 @@
 // Bump VERSION on every release so phones drop the old cache.
-const VERSION = 'tilth-v3';
+const VERSION = 'tilth-v4';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'game.js', 'art.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
@@ -9,5 +9,7 @@ self.addEventListener('activate', (e) => e.waitUntil(
 ));
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request)));
+  // Page loads can carry a query string (launchers, shared links); serve the cached page anyway.
+  const opts = { ignoreSearch: e.request.mode === 'navigate' };
+  e.respondWith(caches.match(e.request, opts).then((hit) => hit || fetch(e.request)));
 });

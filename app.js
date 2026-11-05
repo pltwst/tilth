@@ -239,3 +239,5 @@ $('legend').innerHTML = Object.entries(KINDS)
 render();
 if (!store.get(SEEN)) { store.set(SEEN, true); $('help').showModal(); }
 if ('serviceWorker' in navigator && isSecureContext) navigator.serviceWorker.register('sw.js');
+// Ask the browser not to clear saved games and scores when the device runs low on space.
+navigator.storage?.persist?.().catch(() => {});
