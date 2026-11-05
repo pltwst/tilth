@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newGame, play, undo, groupAt, scoreGroup, goal, nextToken, untilHarvest, HARVEST } from './game.js';
+import { newGame, play, undo, groupAt, scoreGroup, goal, nextToken, untilHarvest, HARVEST } from './public/game.js';
 
 const plant = (kind, extra = {}) => ({ kind, age: 0, bee: false, ...extra });
 
