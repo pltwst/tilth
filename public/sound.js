@@ -34,6 +34,7 @@ const SOUNDS = {
   season: () => run([523.25, 659.25, 783.99, 1046.5], 0.09, 0.42),
   over: () => run([783.99, 659.25, 523.25, 392], 0.17, 0.5),
   undo: () => tone(620, 0, 0.1, { type: 'sine', vol: 0.07, slide: 0.65 }),
+  achieve: () => run([783.99, 1046.5, 1318.51, 1567.98], 0.07, 0.36, { type: 'sine', vol: 0.09 }),
 };
 
 export function sfx(name, arg) {

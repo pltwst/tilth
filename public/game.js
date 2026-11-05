@@ -179,5 +179,6 @@ export function play(state, i) {
 }
 
 export function undo(state) {
-  return state.prev ? { ...structuredClone(state.prev), prev: null } : null;
+  // undone stays set for the rest of the garden (the No Regrets achievement reads it).
+  return state.prev ? { ...structuredClone(state.prev), prev: null, undone: true } : null;
 }

@@ -172,6 +172,22 @@ button { font: inherit; color: inherit; }
   opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
 }
 .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.toast, .final-new { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.toast svg { width: 20px; height: 20px; color: #f5c22f; flex: none; }
+.final-new { white-space: normal; justify-content: center; margin: 12px 0 0; font-weight: 700; }
+.final-new svg { width: 22px; height: 22px; color: #d9a514; flex: none; }
+.final-new[hidden] { display: none; }
+.ach-list { list-style: none; margin: 4px 0 0; padding: 0; }
+.ach-list li {
+  display: grid; grid-template-columns: 26px 1fr; column-gap: 10px; align-items: center;
+  padding: 9px 0; border-top: 1px solid var(--paper-2);
+}
+.ach-list li > svg, .ach-list li > i { grid-row: span 2; width: 24px; height: 24px; }
+.ach-list li > svg { color: #4f8a3c; }
+.ach-list li > i { box-sizing: border-box; border: 2.5px solid var(--muted); border-radius: 50%; opacity: .5; width: 22px; height: 22px; justify-self: center; }
+.ach-list b { line-height: 1.2; }
+.ach-list span { font-size: .85rem; color: var(--muted); font-weight: 600; }
+.ach-list li:not(.done) b { color: var(--muted); }
 
 .controls { display: flex; gap: 8px; justify-content: space-between; }
 .btn {
@@ -192,9 +208,11 @@ button { font: inherit; color: inherit; }
   max-height: calc(100dvh - 32px);
   background: var(--paper); color: var(--ink);
   box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+  overflow-y: auto;
 }
 .sheet::backdrop { background: rgba(30, 20, 15, .45); }
 .sheet h2 { margin: 0 0 12px; font-size: 1.5rem; }
+.sheet h2:focus { outline: none; }
 .sheet form { margin-top: 18px; }
 .sheet form .btn { width: 100%; padding: 13px; font-size: 1rem; }
 .sheet .stack { display: grid; gap: 8px; }

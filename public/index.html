@@ -86,14 +86,23 @@
       <button id="sound-toggle" class="toggle" aria-pressed="true"></button>
     </div>
     <form method="dialog" class="stack">
+      <button class="btn" value="achievements" id="ach-btn">Achievements</button>
       <button class="btn" value="help">How to play</button>
       <button class="btn primary" value="done">Done</button>
     </form>
   </dialog>
 
+  <dialog id="achievements" class="sheet">
+    <h2 tabindex="-1" autofocus>Achievements</h2>
+    <p class="muted" id="ach-count"></p>
+    <ul class="ach-list" id="ach-list"></ul>
+    <form method="dialog"><button class="btn primary">Done</button></form>
+  </dialog>
+
   <dialog id="over" class="sheet">
     <h2>Garden full</h2>
     <p class="final"><output id="final-score">0</output><span class="muted" id="final-best"></span></p>
+    <p class="final-new" id="final-new" hidden></p>
     <form method="dialog" class="stack">
       <button class="btn primary" value="new">Plant a new garden</button>
       <button class="btn" value="pick">Change difficulty</button>

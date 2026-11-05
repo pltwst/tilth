@@ -2,12 +2,14 @@ import { newGame, play, undo, groupAt, scoreGroup, goal, ripe, untilHarvest, KIN
 import { plantArt, sickleArt, beeArt } from './art.js';
 import { sfx, setSound } from './sound.js';
 import { icon } from './icons.js';
+import { ACHIEVEMENTS, unlocked } from './achievements.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode: play without saving */ } },
 };
+const ACH = 'tilth.achievements';
 const KEY = 'tilth.v1.game', BEST = 'tilth.v1.best', SEEN = 'tilth.v1.help', SOUND = 'tilth.sound', PREF = 'tilth.mode';
 const SOIL = ['clay', 'ochre', 'lilac'];
 
@@ -148,13 +150,46 @@ function popup(i, text) {
   p.addEventListener('animationend', () => p.remove());
 }
 
-let toastTimer;
-function toast(text) {
+// Toasts wait in line, so a season toast and an achievement toast do not hide each other.
+const toasts = [];
+function toast(html) {
+  toasts.push(html);
+  if (toasts.length === 1) showToast();
+}
+function showToast() {
+  if (!toasts.length) return;
   const el = $('toast');
-  el.textContent = text;
+  el.innerHTML = toasts[0];
   el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 1400);
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => { toasts.shift(); showToast(); }, 250);
+  }, 1400);
+}
+
+const achieved = store.get(ACH) || {}; // id -> time unlocked
+let newThisGame = [];
+const achName = (id) => ACHIEVEMENTS.find((a) => a.id === id).name;
+
+function checkAchievements(event) {
+  const fresh = unlocked(state, event).filter((id) => !achieved[id]);
+  if (!fresh.length) return;
+  fresh.forEach((id) => { achieved[id] = Date.now(); });
+  store.set(ACH, achieved);
+  newThisGame.push(...fresh);
+  if (state.over) return; // the game-over sheet lists them
+  setTimeout(() => {
+    fresh.forEach((id) => toast(`${icon('trophy')}<span>${achName(id)}</span>`));
+    sfx('achieve');
+  }, 500);
+}
+
+function renderAchievements() {
+  const done = ACHIEVEMENTS.filter((a) => achieved[a.id]).length;
+  $('ach-count').textContent = `${done} of ${ACHIEVEMENTS.length}`;
+  $('ach-list').innerHTML = ACHIEVEMENTS
+    .map((a) => `<li class="${achieved[a.id] ? 'done' : ''}">${achieved[a.id] ? icon('check') : '<i></i>'}<b>${a.name}</b><span>${a.desc}</span></li>`)
+    .join('');
 }
 
 function restart(t, cls) {
@@ -183,6 +218,7 @@ function tap(i) {
   store.set(KEY, state);
   store.set(bestKey(modeOf(state)), best);
   render();
+  checkAchievements(event);
 
   if (event.type === 'plant') {
     restart(tiles[i].querySelector('.plant'), 'pop');
@@ -200,6 +236,8 @@ function tap(i) {
 function showOver() {
   $('final-score').value = state.score;
   $('final-best').textContent = state.score > bestBefore ? 'New best!' : `Best ${best}`;
+  $('final-new').hidden = !newThisGame.length;
+  $('final-new').innerHTML = `${icon('trophy')}<span>Unlocked: ${newThisGame.map(achName).join(', ')}</span>`;
   $('over').showModal();
   sfx('over');
 }
@@ -211,6 +249,7 @@ function setPreferred(mode) {
 }
 
 function startNew(mode = preferred) {
+  newThisGame = [];
   setPreferred(mode);
   best = bestBefore = store.get(bestKey(mode)) || 0;
   state = newGame(Date.now(), mode);
@@ -290,8 +329,15 @@ $('sound-toggle').addEventListener('click', () => {
   sfx('place'); // a sample, so the player hears that sound is on
 });
 $('settings-btn').innerHTML = icon('gear');
-$('settings-btn').addEventListener('click', () => { $('settings').returnValue = ''; $('settings').showModal(); });
-$('settings').addEventListener('close', () => $('settings').returnValue === 'help' && $('help').showModal());
+$('settings-btn').addEventListener('click', () => {
+  $('ach-btn').textContent = `Achievements · ${ACHIEVEMENTS.filter((a) => achieved[a.id]).length}/${ACHIEVEMENTS.length}`;
+  $('settings').returnValue = '';
+  $('settings').showModal();
+});
+$('settings').addEventListener('close', () => {
+  if ($('settings').returnValue === 'help') $('help').showModal();
+  if ($('settings').returnValue === 'achievements') { renderAchievements(); $('achievements').showModal(); }
+});
 
 $('legend').innerHTML = Object.entries(KINDS)
   .map(([kind, k]) => `<tr><td>${plantArt({ kind, age: 0 }, true)}</td><td>${k.name}</td><td>${k.value} pt${k.value > 1 ? 's' : ''}${k.grow ? ` · grows in ${k.grow}` : ''}${k.decay ? ` · rots after ${k.decay}` : ''}</td></tr>`)

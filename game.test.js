@@ -129,7 +129,7 @@ test('undo restores the previous state, including the random roll', () => {
   const empty = s0.plants.indexOf(null);
   const s1 = play(s0, empty).state;
   const back = undo(s1);
-  assert.deepEqual({ ...back, prev: null }, { ...s0, prev: null });
+  assert.deepEqual({ ...back, prev: null, undone: false }, { ...s0, prev: null, undone: false });
   assert.equal(undo(back), null, 'only one level of undo');
   assert.deepEqual(play(back, empty).state.queue, s1.queue, 'same roll after undo');
 });
