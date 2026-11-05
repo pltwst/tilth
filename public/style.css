@@ -216,6 +216,8 @@ button { font: inherit; color: inherit; }
 .sheet form { margin-top: 18px; }
 .sheet form .btn { width: 100%; padding: 13px; font-size: 1rem; }
 .sheet .stack { display: grid; gap: 8px; }
+.version { margin: 12px 0 0; text-align: center; font-size: .8rem; font-weight: 600; }
+.version:empty { display: none; }
 .mode {
   display: grid; gap: 2px; text-align: left;
   border: 0; border-radius: 14px; padding: 12px 14px;

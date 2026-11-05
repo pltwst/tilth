@@ -333,7 +333,15 @@ $('settings-btn').addEventListener('click', () => {
   $('ach-btn').textContent = `Achievements · ${ACHIEVEMENTS.filter((a) => achieved[a.id]).length}/${ACHIEVEMENTS.length}`;
   $('settings').returnValue = '';
   $('settings').showModal();
+  showVersion();
 });
+
+// The version is the number in the offline cache name (VERSION in sw.js), so it has one source.
+async function showVersion() {
+  const keys = await caches?.keys().catch(() => []) ?? [];
+  const v = Math.max(0, ...keys.map((k) => +(k.match(/^tilth-v(\d+)$/)?.[1] ?? 0)));
+  $('version').textContent = v ? `Version ${v}` : '';
+}
 $('settings').addEventListener('close', () => {
   if ($('settings').returnValue === 'help') $('help').showModal();
   if ($('settings').returnValue === 'achievements') { renderAchievements(); $('achievements').showModal(); }
@@ -345,6 +353,11 @@ $('legend').innerHTML = Object.entries(KINDS)
 
 render();
 if (!store.get(SEEN)) { store.set(SEEN, true); $('help').showModal(); }
-if ('serviceWorker' in navigator && isSecureContext) navigator.serviceWorker.register('sw.js');
+if ('serviceWorker' in navigator && isSecureContext) {
+  // A new version took over (sw.js uses skipWaiting + clients.claim): reload once to run it.
+  // Only when an older version was running, so a first visit does not reload. The game is saved after every move.
+  if (navigator.serviceWorker.controller) navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+  navigator.serviceWorker.register('sw.js');
+}
 // Ask the browser not to clear saved games and scores when the device runs low on space.
 navigator.storage?.persist?.().catch(() => {});
