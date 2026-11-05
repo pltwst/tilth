@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tilth</title>
+  <meta name="description" content="Plant, match and harvest on a garden that changes under your feet.">
+  <meta name="theme-color" content="#f8f3ea">
+  <script>
+    // Runs before first paint, so there is no flash of the wrong theme. app.js owns the toggle.
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem('tilth.theme'); } catch (e) {}
+      var dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      document.querySelector('meta[name=theme-color]').content = dark ? '#1e1916' : '#f8f3ea';
+    })();
+  </script>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Tilth">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <h1 class="wordmark">Tilth</h1>
+      <div class="scores">
+        <div class="score"><span class="label">Score</span><output id="score">0</output></div>
+        <div class="score best"><span class="label">Best</span><output id="best">0</output></div>
+        <button id="theme-btn" class="icon-btn" aria-label="Switch theme"></button>
+      </div>
+    </header>
+
+    <section class="season" aria-label="Season progress">
+      <span id="season-label">Season 1</span>
+      <div class="bar"><div id="season-bar"></div></div>
+      <span id="season-goal" class="muted"></span>
+    </section>
+
+    <section class="queue-wrap">
+      <ol id="queue" class="queue" aria-label="Next items"></ol>
+      <p id="hint" class="hint" aria-live="polite"></p>
+    </section>
+
+    <section class="board-wrap">
+      <div id="board" class="board" role="grid" aria-label="Garden"></div>
+      <div id="fx" class="fx" aria-hidden="true"></div>
+      <div id="toast" class="toast" aria-live="polite"></div>
+    </section>
+
+    <nav class="controls">
+      <button id="undo" class="btn">Undo</button>
+      <button id="help-btn" class="btn">How to play</button>
+      <button id="new-btn" class="btn">New garden</button>
+    </nav>
+  </main>
+
+  <dialog id="help" class="sheet">
+    <h2>How to play</h2>
+    <ol class="rules">
+      <li><b>Plant.</b> Put the plant at the front of the queue on any empty tile.</li>
+      <li><b>Harvest.</b> Every fourth item is the sickle. Tap a plant to harvest it and every matching plant that touches it on the same soil.</li>
+      <li><b>Turn the soil.</b> Harvested tiles change to the next soil. The edge at the bottom of each field shows that next soil.</li>
+      <li><b>Score big.</b> Each plant in a group is worth more than the last: 1, 2, 3, 4… times its value. Bees add +1 to every plant in their group.</li>
+      <li><b>Be patient.</b> Sunflowers, birches and redwoods need a few harvests to grow. Puffballs rot away after three.</li>
+      <li><b>Keep room.</b> The garden is over when you cannot plant or harvest.</li>
+    </ol>
+    <table class="legend" id="legend"></table>
+    <form method="dialog"><button class="btn primary">Let’s grow</button></form>
+  </dialog>
+
+  <dialog id="over" class="sheet">
+    <h2>Garden full</h2>
+    <p class="final"><output id="final-score">0</output><span class="muted" id="final-best"></span></p>
+    <form method="dialog"><button class="btn primary" value="new">Plant a new garden</button></form>
+  </dialog>
+
+  <dialog id="confirm" class="sheet small">
+    <h2>Start a new garden?</h2>
+    <p class="muted">You lose the current garden.</p>
+    <form method="dialog" class="row">
+      <button class="btn" value="cancel">Keep playing</button>
+      <button class="btn primary" value="new">New garden</button>
+    </form>
+  </dialog>
+</body>
+</html>
