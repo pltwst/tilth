@@ -401,5 +401,12 @@ if (!ios && !inApp) addEventListener('beforeinstallprompt', (e) => {
 });
 renderInstall();
 
+// There is no manifest field for window size. On the first desktop app launch, fit the window to the
+// full-size board (460px + 16px gutters; style.css keeps 290px for the rest). The browser remembers it after that.
+if (installed && !mobile && !store.get('tilth.window')) {
+  store.set('tilth.window', true);
+  resizeTo(492 + outerWidth - innerWidth, 750 + outerHeight - innerHeight);
+}
+
 // Ask the browser not to clear saved games and scores when the device runs low on space.
 navigator.storage?.persist?.().catch(() => {});
