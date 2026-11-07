@@ -338,7 +338,9 @@ $('settings-btn').addEventListener('click', () => {
 
 // The version is the number in the offline cache name (VERSION in sw.js), so it has one source.
 async function showVersion() {
-  const keys = await caches?.keys().catch(() => []) ?? [];
+  // Plain-HTTP dev servers are not a secure context: no Cache API and no service worker to ask.
+  if (!self.caches) { $('version').textContent = 'Version DEV'; return; }
+  const keys = await caches.keys().catch(() => []);
   const v = keys.map((k) => k.match(/^tilth-(\d+\.\d+\.\d+)$/)?.[1]).find(Boolean);
   $('version').textContent = `Version ${v ?? '?'}`;
 }
