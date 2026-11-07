@@ -359,5 +359,37 @@ if ('serviceWorker' in navigator && isSecureContext) {
   if (navigator.serviceWorker.controller) navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
   navigator.serviceWorker.register('sw.js');
 }
+
+// Install banner. Chromium has a native install dialog (beforeinstallprompt); iOS has none, so we show the steps.
+const INSTALL = 'tilth.install';
+const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+// In-app browsers (Facebook, Instagram, ...) cannot install: send people to the real browser.
+const inApp = /FBAN|FBAV|Instagram|LinkedInApp|Line\//.test(navigator.userAgent);
+let installPrompt = null;
+const showInstall = (html, button = false) => {
+  $('install-text').innerHTML = html;
+  $('install-btn').hidden = !button;
+  $('install').hidden = false;
+};
+const hideInstall = () => { $('install').hidden = true; };
+$('install-close').innerHTML = icon('close');
+$('install-close').addEventListener('click', () => { store.set(INSTALL, 'dismissed'); hideInstall(); });
+$('install-btn').addEventListener('click', async () => {
+  installPrompt?.prompt();
+  if ((await installPrompt?.userChoice)?.outcome === 'accepted') hideInstall();
+  installPrompt = null;
+});
+addEventListener('appinstalled', hideInstall);
+if (!installed && !store.get(INSTALL)) {
+  if (inApp) showInstall(`Open this page in ${ios ? 'Safari' : 'your browser'} to install Tilth and play offline.`);
+  else if (ios) showInstall(`Play offline: tap Share ${icon('share')}, then <b>Add to Home Screen</b>.`);
+  else addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    showInstall('Install Tilth to play offline, full screen.', true);
+  });
+}
+
 // Ask the browser not to clear saved games and scores when the device runs low on space.
 navigator.storage?.persist?.().catch(() => {});
