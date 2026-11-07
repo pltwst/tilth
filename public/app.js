@@ -363,7 +363,7 @@ if ('serviceWorker' in navigator && isSecureContext) {
 }
 
 // Install banner. Chromium has a native install dialog (beforeinstallprompt); iOS has none, so we show the steps.
-// The banner can be dismissed; on phones the same note then stays in settings until Tilth runs installed.
+// The banner can be dismissed; on phones (and desktops that can install) the same note then stays in settings.
 const INSTALL = 'tilth.install';
 let installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -383,7 +383,7 @@ function renderInstall() {
   $('install-btn').hidden = $('install-note-btn').hidden = !installPrompt;
   $('install').hidden = installed || store.get(INSTALL) || !(inApp || ios || installPrompt);
   // One notice at a time: settings takes over once the banner is closed.
-  $('install-note').hidden = installed || !mobile || !$('install').hidden;
+  $('install-note').hidden = installed || !(mobile || installPrompt) || !$('install').hidden;
 }
 async function promptInstall() {
   const p = installPrompt;
