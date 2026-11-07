@@ -257,6 +257,7 @@ button { font: inherit; color: inherit; }
 .legend td:first-child { width: 36px; }
 .legend .art { width: 30px; height: 30px; display: block; }
 .legend td:last-child { text-align: right; color: var(--muted); }
+.credit { font-size: .8rem; line-height: 1.4; margin: 12px 0 0; }
 .final { display: flex; flex-direction: column; align-items: center; margin: 4px 0 0; }
 .final output { font-size: 3.4rem; font-weight: 900; line-height: 1; }
 
