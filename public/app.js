@@ -361,35 +361,45 @@ if ('serviceWorker' in navigator && isSecureContext) {
 }
 
 // Install banner. Chromium has a native install dialog (beforeinstallprompt); iOS has none, so we show the steps.
+// The banner can be dismissed; on phones the same note stays in settings until Tilth runs installed.
 const INSTALL = 'tilth.install';
-const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+let installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const mobile = ios || /Android/.test(navigator.userAgent);
 // In-app browsers (Facebook, Instagram, ...) cannot install: send people to the real browser.
 const inApp = /FBAN|FBAV|Instagram|LinkedInApp|Line\//.test(navigator.userAgent);
 let installPrompt = null;
-const showInstall = (html, button = false) => {
-  $('install-text').innerHTML = html;
-  $('install-btn').hidden = !button;
-  $('install').hidden = false;
-};
-const hideInstall = () => { $('install').hidden = true; };
-$('install-close').innerHTML = icon('close');
-$('install-close').addEventListener('click', () => { store.set(INSTALL, 'dismissed'); hideInstall(); });
-$('install-btn').addEventListener('click', async () => {
-  installPrompt?.prompt();
-  if ((await installPrompt?.userChoice)?.outcome === 'accepted') hideInstall();
-  installPrompt = null;
-});
-addEventListener('appinstalled', hideInstall);
-if (!installed && !store.get(INSTALL)) {
-  if (inApp) showInstall(`Open this page in ${ios ? 'Safari' : 'your browser'} to install Tilth and play offline.`);
-  else if (ios) showInstall(`Play offline: tap Share ${icon('share')}, then <b>Add to Home Screen</b>.`);
-  else addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    installPrompt = e;
-    showInstall('Install Tilth to play offline, full screen.', true);
-  });
+function installMessage() {
+  if (inApp) return `Open this page in ${ios ? 'Safari' : 'your browser'} to install Tilth and play offline.`;
+  if (ios) return `Play offline: tap Share ${icon('share')}, then <b>Add to Home Screen</b>.`;
+  if (installPrompt) return 'Install Tilth to play offline, full screen.';
+  return 'Play offline: open the browser menu, then <b>Install app</b> or <b>Add to Home screen</b>.';
 }
+function renderInstall() {
+  const html = installMessage();
+  $('install-text').innerHTML = $('install-note-text').innerHTML = html;
+  $('install-btn').hidden = $('install-note-btn').hidden = !installPrompt;
+  $('install').hidden = installed || store.get(INSTALL) || !(inApp || ios || installPrompt);
+  $('install-note').hidden = installed || !mobile;
+}
+async function promptInstall() {
+  const p = installPrompt;
+  installPrompt = null;
+  p?.prompt();
+  renderInstall(); // a prompt works once; drop the button now
+  if ((await p?.userChoice)?.outcome === 'accepted') { installed = true; renderInstall(); }
+}
+$('install-close').innerHTML = icon('close');
+$('install-close').addEventListener('click', () => { store.set(INSTALL, 'dismissed'); renderInstall(); });
+$('install-btn').addEventListener('click', promptInstall);
+$('install-note-btn').addEventListener('click', promptInstall);
+addEventListener('appinstalled', () => { installed = true; renderInstall(); });
+if (!ios && !inApp) addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  renderInstall();
+});
+renderInstall();
 
 // Ask the browser not to clear saved games and scores when the device runs low on space.
 navigator.storage?.persist?.().catch(() => {});
