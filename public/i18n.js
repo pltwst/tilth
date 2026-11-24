@@ -7,7 +7,7 @@ export const HU = {
   'Season progress': 'Évszak állása',
   'Next items': 'Következők',
   Garden: 'Kert',
-  Undo: 'Vissza',
+  Undo: 'Visszavonás',
   'New garden': 'Új kert',
   Install: 'Telepítés',
   'Not now': 'Most nem',
@@ -84,7 +84,7 @@ export const HU = {
   Difficulty: 'Nehézség',
   Language: 'Nyelv',
   'Your next garden will be {mode}. Start it now? You lose the current garden.':
-    'A következő kerted nehézsége: {mode}. Elkezded most? A mostani kert elvész.',
+    'A következő kerted nehézsége: {mode}. Elkezded most? A mostani kert elveszik.',
   'Start now': 'Kezdés most',
   'Dark theme': 'Sötét téma',
   'Light theme': 'Világos téma',
