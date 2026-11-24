@@ -3,6 +3,7 @@ import { plantArt, sickleArt, beeArt } from './art.js';
 import { sfx, setSound } from './sound.js';
 import { icon } from './icons.js';
 import { ACHIEVEMENTS, unlocked } from './achievements.js';
+import { tr, lang, LANG } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -12,6 +13,18 @@ const store = {
 const ACH = 'tilth.achievements';
 const KEY = 'tilth.v1.game', BEST = 'tilth.v1.best', SEEN = 'tilth.v1.help', SOUND = 'tilth.sound', PREF = 'tilth.mode';
 const SOIL = ['clay', 'ochre', 'lilac'];
+
+// index.html is written in English: swap each static text and aria-label for its translation.
+document.documentElement.lang = lang;
+if (lang !== 'en') {
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  while (walk.nextNode()) {
+    const n = walk.currentNode, en = n.data.trim();
+    if (en) n.data = n.data.replace(en, tr(en));
+  }
+  document.querySelectorAll('[aria-label]').forEach((el) => el.setAttribute('aria-label', tr(el.getAttribute('aria-label'))));
+}
+const name = (kind) => tr(KINDS[kind].name);
 
 let state = store.get(KEY);
 if (!state || state.over || !Array.isArray(state.plants)) state = newGame();
@@ -90,17 +103,18 @@ function render() {
       drawn[i] = html;
     }
     t.querySelector('.pips').innerHTML = pips(p);
-    t.setAttribute('aria-label', `${p ? KINDS[p.kind].name + (ripe(p) ? '' : ', growing') + (p.bee ? ', with bee' : '') : 'Empty'}, ${SOIL[s]} soil, next ${SOIL[(s + 1) % 3]}`);
+    const plant = p ? name(p.kind) + (ripe(p) ? '' : tr(', growing')) + (p.bee ? tr(', with bee') : '') : tr('Empty');
+    t.setAttribute('aria-label', tr('{plant}, {soil} soil, next {next}', { plant, soil: tr(SOIL[s]), next: tr(SOIL[(s + 1) % 3]) }));
   });
 
   $('queue').innerHTML = state.queue
-    .map((t) => `<li aria-label="${t.kind === HARVEST ? 'Sickle' : KINDS[t.kind].name}">${t.kind === HARVEST ? sickleArt() : plantArt({ kind: t.kind, age: 0 }, true) + (t.bee ? beeArt() : '')}</li>`)
+    .map((t) => `<li aria-label="${t.kind === HARVEST ? tr('Sickle') : name(t.kind)}">${t.kind === HARVEST ? sickleArt() : plantArt({ kind: t.kind, age: 0 }, true) + (t.bee ? beeArt() : '')}</li>`)
     .join('');
 
   $('score').value = state.score;
   $('best').value = best;
   const lo = goal(state.season - 1), hi = goal(state.season);
-  $('season-label').textContent = `Season ${state.season} · ${MODES[modeOf(state)].name}`;
+  $('season-label').textContent = tr('Season {n} · {mode}', { n: state.season, mode: tr(MODES[modeOf(state)].name) });
   $('season-bar').style.width = `${Math.min(100, ((state.score - lo) / (hi - lo)) * 100)}%`;
   $('season-goal').textContent = `${state.score} / ${hi}`;
   $('undo').disabled = !state.prev || state.over;
@@ -108,12 +122,12 @@ function render() {
 }
 
 function hint(extra) {
-  const t = state.queue[0];
-  if (t.kind === HARVEST) {
-    $('hint').innerHTML = extra ?? 'Harvest a group<small>Tap a ripe plant</small>';
+  const { kind } = state.queue[0];
+  if (kind === HARVEST) {
+    $('hint').innerHTML = extra ?? tr('Harvest a group<small>Tap a ripe plant</small>');
   } else {
     const left = untilHarvest(state);
-    $('hint').innerHTML = `Plant the ${KINDS[t.kind].name.toLowerCase()}<small>${left === 1 ? 'Harvest next' : `Harvest in ${left}`}</small>`;
+    $('hint').innerHTML = `${tr(`Plant the ${kind}`)}<small>${left === 1 ? tr('Harvest next') : tr('Harvest in {n}', { n: left })}</small>`;
   }
 }
 
@@ -125,7 +139,7 @@ function preview(i) {
   g.forEach((n) => tiles[n].classList.add('hl'));
   const bees = g.filter((n) => state.plants[n].bee).length;
   const pts = scoreGroup(state.plants[i].kind, g.length, bees);
-  hint(`+${pts} points<small>${g.length} × ${KINDS[state.plants[i].kind].name.toLowerCase()}${bees ? `, ${bees} bee${bees > 1 ? 's' : ''}` : ''}</small>`);
+  hint(`${tr('+{n} points', { n: pts })}<small>${g.length} × ${name(state.plants[i].kind).toLowerCase()}${bees ? `, ${tr(bees > 1 ? '{n} bees' : '{n} bee', { n: bees })}` : ''}</small>`);
 }
 const clearPreview = () => tiles.forEach((t) => t.classList.remove('hl'));
 
@@ -169,7 +183,7 @@ function showToast() {
 
 const achieved = store.get(ACH) || {}; // id -> time unlocked
 let newThisGame = [];
-const achName = (id) => ACHIEVEMENTS.find((a) => a.id === id).name;
+const achName = (id) => tr(ACHIEVEMENTS.find((a) => a.id === id).name);
 
 function checkAchievements(event) {
   const fresh = unlocked(state, event).filter((id) => !achieved[id]);
@@ -186,9 +200,9 @@ function checkAchievements(event) {
 
 function renderAchievements() {
   const done = ACHIEVEMENTS.filter((a) => achieved[a.id]).length;
-  $('ach-count').textContent = `${done} of ${ACHIEVEMENTS.length}`;
+  $('ach-count').textContent = tr('{done} of {total}', { done, total: ACHIEVEMENTS.length });
   $('ach-list').innerHTML = ACHIEVEMENTS
-    .map((a) => `<li class="${achieved[a.id] ? 'done' : ''}">${achieved[a.id] ? icon('check') : '<i></i>'}<b>${a.name}</b><span>${a.desc}</span></li>`)
+    .map((a) => `<li class="${achieved[a.id] ? 'done' : ''}">${achieved[a.id] ? icon('check') : '<i></i>'}<b>${tr(a.name)}</b><span>${tr(a.desc)}</span></li>`)
     .join('');
 }
 
@@ -227,7 +241,7 @@ function tap(i) {
   } else {
     event.matured.forEach((n) => restart(tiles[n].querySelector('.plant'), 'grow'));
     if (event.matured.length) setTimeout(() => sfx('grow'), 300);
-    if (event.seasonUp) setTimeout(() => { toast(`Season ${state.season}`); sfx('season'); }, 350);
+    if (event.seasonUp) setTimeout(() => { toast(tr('Season {n}', { n: state.season })); sfx('season'); }, 350);
   }
   document.querySelector('.queue li:last-child')?.classList.add('enter');
   if (state.over) setTimeout(showOver, 900);
@@ -235,9 +249,9 @@ function tap(i) {
 
 function showOver() {
   $('final-score').value = state.score;
-  $('final-best').textContent = state.score > bestBefore ? 'New best!' : `Best ${best}`;
+  $('final-best').textContent = state.score > bestBefore ? tr('New best!') : tr('Best {n}', { n: best });
   $('final-new').hidden = !newThisGame.length;
-  $('final-new').innerHTML = `${icon('trophy')}<span>Unlocked: ${newThisGame.map(achName).join(', ')}</span>`;
+  $('final-new').innerHTML = `${icon('trophy')}<span>${tr('Unlocked: {list}', { list: newThisGame.map(achName).join(', ') })}</span>`;
   $('over').showModal();
   sfx('over');
 }
@@ -266,7 +280,7 @@ $('undo').addEventListener('click', () => {
 function pickMode() {
   $('new-warning').hidden = state.over;
   $('modes').innerHTML = Object.entries(MODES)
-    .map(([key, m]) => `<button class="mode${key === preferred ? ' current' : ''}" value="${key}"><b>${m.name}</b><span>${m.plants} plants per harvest${m.bees > 1 ? ', more bees' : m.bees < 1 ? ', fewer bees' : ''}</span></button>`)
+    .map(([key, m]) => `<button class="mode${key === preferred ? ' current' : ''}" value="${key}"><b>${tr(m.name)}</b><span>${tr('{n} plants per harvest', { n: m.plants })}${m.bees > 1 ? tr(', more bees') : m.bees < 1 ? tr(', fewer bees') : ''}</span></button>`)
     .join('');
   $('confirm').returnValue = '';
   $('confirm').showModal();
@@ -277,14 +291,14 @@ $('over').addEventListener('close', () => ($('over').returnValue === 'pick' ? pi
 
 // Difficulty in settings. A fresh garden switches at once; a garden in progress keeps
 // its mode, and the note offers to start the new mode now.
-$('difficulty').innerHTML = '<legend>Difficulty</legend>' + Object.entries(MODES)
-  .map(([key, m]) => `<label><input type="radio" name="mode" value="${key}"><span>${m.name}</span></label>`)
+$('difficulty').innerHTML = `<legend>${tr('Difficulty')}</legend>` + Object.entries(MODES)
+  .map(([key, m]) => `<label><input type="radio" name="mode" value="${key}"><span>${tr(m.name)}</span></label>`)
   .join('');
 function renderDifficulty() {
   $('difficulty').querySelector(`input[value="${preferred}"]`).checked = true;
   const pending = preferred !== modeOf(state) && !state.over;
   $('mode-note').hidden = !pending;
-  if (pending) $('mode-note-text').textContent = `Your next garden will be ${MODES[preferred].name}. Start it now? You lose the current garden.`;
+  if (pending) $('mode-note-text').textContent = tr('Your next garden will be {mode}. Start it now? You lose the current garden.', { mode: tr(MODES[preferred].name) });
 }
 $('difficulty').addEventListener('change', (e) => {
   setPreferred(e.target.value);
@@ -292,6 +306,12 @@ $('difficulty').addEventListener('change', (e) => {
 });
 $('mode-now').addEventListener('click', () => { $('settings').close(); startNew(); });
 renderDifficulty();
+
+$('language').querySelector(`input[value="${lang}"]`).checked = true;
+$('language').addEventListener('change', (e) => {
+  try { localStorage.setItem(LANG, e.target.value); } catch { /* not saved: the reload falls back to the device language */ }
+  location.reload(); // the game is saved after every move; a reload redraws every text
+});
 
 // Settings. Theme follows the system until the player picks one; then the choice is saved.
 // The theme is stored as a raw string because the inline script in index.html reads it.
@@ -301,7 +321,7 @@ function applyTheme(theme) {
   document.querySelector('meta[name=theme-color]').content = theme === 'dark' ? '#1e1916' : '#f8f3ea';
   const dark = theme === 'dark';
   $('theme-toggle').setAttribute('aria-pressed', dark);
-  $('theme-toggle').innerHTML = `${icon(dark ? 'moon' : 'sun')}<span>${dark ? 'Dark' : 'Light'} theme</span>`;
+  $('theme-toggle').innerHTML = `${icon(dark ? 'moon' : 'sun')}<span>${tr(dark ? 'Dark theme' : 'Light theme')}</span>`;
 }
 applyTheme(document.documentElement.dataset.theme);
 $('theme-toggle').addEventListener('click', () => {
@@ -319,7 +339,7 @@ let soundOn = store.get(SOUND) ?? true;
 function applySound() {
   setSound(soundOn);
   $('sound-toggle').setAttribute('aria-pressed', soundOn);
-  $('sound-toggle').innerHTML = `${icon(soundOn ? 'soundOn' : 'soundOff')}<span>Sound ${soundOn ? 'on' : 'off'}</span>`;
+  $('sound-toggle').innerHTML = `${icon(soundOn ? 'soundOn' : 'soundOff')}<span>${tr(soundOn ? 'Sound on' : 'Sound off')}</span>`;
 }
 applySound();
 $('sound-toggle').addEventListener('click', () => {
@@ -330,7 +350,7 @@ $('sound-toggle').addEventListener('click', () => {
 });
 $('settings-btn').innerHTML = icon('gear');
 $('settings-btn').addEventListener('click', () => {
-  $('ach-btn').textContent = `Achievements · ${ACHIEVEMENTS.filter((a) => achieved[a.id]).length}/${ACHIEVEMENTS.length}`;
+  $('ach-btn').textContent = `${tr('Achievements')} · ${ACHIEVEMENTS.filter((a) => achieved[a.id]).length}/${ACHIEVEMENTS.length}`;
   $('settings').returnValue = '';
   $('settings').showModal();
   showVersion();
@@ -339,10 +359,10 @@ $('settings-btn').addEventListener('click', () => {
 // The version is the number in the offline cache name (VERSION in sw.js), so it has one source.
 async function showVersion() {
   // Plain-HTTP dev servers are not a secure context: no Cache API and no service worker to ask.
-  if (!self.caches) { $('version').textContent = 'Version DEV'; return; }
+  if (!self.caches) { $('version').textContent = tr('Version {v}', { v: 'DEV' }); return; }
   const keys = await caches.keys().catch(() => []);
   const v = keys.map((k) => k.match(/^tilth-(\d+\.\d+\.\d+)$/)?.[1]).find(Boolean);
-  $('version').textContent = `Version ${v ?? '?'}`;
+  $('version').textContent = tr('Version {v}', { v: v ?? '?' });
 }
 $('settings').addEventListener('close', () => {
   if ($('settings').returnValue === 'help') $('help').showModal();
@@ -350,7 +370,7 @@ $('settings').addEventListener('close', () => {
 });
 
 $('legend').innerHTML = Object.entries(KINDS)
-  .map(([kind, k]) => `<tr><td>${plantArt({ kind, age: 0 }, true)}</td><td>${k.name}</td><td>${k.value} pt${k.value > 1 ? 's' : ''}${k.grow ? ` · grows in ${k.grow}` : ''}${k.decay ? ` · rots after ${k.decay}` : ''}</td></tr>`)
+  .map(([kind, k]) => `<tr><td>${plantArt({ kind, age: 0 }, true)}</td><td>${tr(k.name)}</td><td>${tr(k.value > 1 ? '{n} pts' : '{n} pt', { n: k.value })}${k.grow ? ` · ${tr('grows in {n}', { n: k.grow })}` : ''}${k.decay ? ` · ${tr('rots after {n}', { n: k.decay })}` : ''}</td></tr>`)
   .join('');
 
 render();
@@ -372,10 +392,10 @@ const mobile = ios || /Android/.test(navigator.userAgent);
 const inApp = /FBAN|FBAV|Instagram|LinkedInApp|Line\//.test(navigator.userAgent);
 let installPrompt = null;
 function installMessage() {
-  if (inApp) return `Open this page in ${ios ? 'Safari' : 'your browser'} to install Tilth and play offline.`;
-  if (ios) return `Play offline: tap Share ${icon('share')}, then <b>Add to Home Screen</b>.`;
-  if (installPrompt) return 'Install Tilth to play offline, full screen.';
-  return 'Play offline: open the browser menu, then <b>Install app</b> or <b>Add to Home screen</b>.';
+  if (inApp) return tr(ios ? 'Open this page in Safari to install Tilth and play offline.' : 'Open this page in your browser to install Tilth and play offline.');
+  if (ios) return tr('Play offline: tap Share {icon}, then <b>Add to Home Screen</b>.', { icon: icon('share') });
+  if (installPrompt) return tr('Install Tilth to play offline, full screen.');
+  return tr('Play offline: open the browser menu, then <b>Install app</b> or <b>Add to Home screen</b>.');
 }
 function renderInstall() {
   const html = installMessage();

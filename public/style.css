@@ -253,6 +253,7 @@ button { font: inherit; color: inherit; }
 .mode:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .sheet.small { width: min(340px, calc(100vw - 32px)); }
 .segmented { border: 0; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+#language { grid-template-columns: 1fr 1fr; }
 .segmented legend { float: left; width: 100%; padding: 0 0 8px; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); grid-column: 1 / -1; }
 .segmented label { position: relative; cursor: pointer; }
 .segmented input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
