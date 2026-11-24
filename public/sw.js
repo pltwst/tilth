@@ -1,6 +1,6 @@
 // Bump VERSION (semver) on every release so phones drop the old cache. Settings shows it.
-const VERSION = 'tilth-1.16.5';
-const FILES = ['./', 'index.html', 'style.css', 'app.js', 'game.js', 'art.js', 'sound.js', 'icons.js', 'achievements.js', 'manifest.webmanifest',
+const VERSION = 'tilth-1.17.0';
+const FILES = ['./', 'index.html', 'style.css', 'app.js', 'game.js', 'art.js', 'sound.js', 'icons.js', 'achievements.js', 'i18n.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())));
